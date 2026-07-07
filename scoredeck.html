@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>ScoreDeck — Segnapunti Multi-Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-0:#03080a;
+  --bg-1:#061014;
+  --bg-2:#0a1a20;
+  --cyan:#22d3ee;
+  --cyan-soft:#67e8f9;
+  --cyan-dim:#0e7490;
+  --cyan-deep:#134e56;
+  --ink:#eafcff;
+  --ink-dim:#8fb4bb;
+  --ink-faint:#5c7a80;
+  --glass:linear-gradient(160deg, rgba(255,255,255,0.055), rgba(255,255,255,0.015));
+  --glass-brd:rgba(103,232,249,0.16);
+  --glass-brd-strong:rgba(34,211,238,0.4);
+  --shadow-lg:0 24px 70px -24px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.04);
+  --shadow-sm:0 10px 30px -14px rgba(0,0,0,0.6);
+  --radius-lg:26px;
+  --radius-md:18px;
+  --radius-sm:12px;
+  --font-display:'Space Grotesk', system-ui, sans-serif;
+  --font-mono:'JetBrains Mono', ui-monospace, monospace;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:var(--font-display);
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 700px at 85% -10%, rgba(34,211,238,0.14), transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, rgba(19,78,86,0.35), transparent 60%),
+    linear-gradient(180deg, var(--bg-0), var(--bg-1) 40%, var(--bg-2));
+  background-attachment:fixed;
+  display:flex;
+  overflow-x:hidden;
+}
+::selection{background:rgba(34,211,238,0.3);}
+::-webkit-scrollbar{width:10px; height:10px;}
+::-webkit-scrollbar-thumb{background:rgba(34,211,238,0.25); border-radius:10px;}
+::-webkit-scrollbar-track{background:transparent;}
+
+/* ---------- NAV ---------- */
+.sidenav{
+  width:230px;
+  flex-shrink:0;
+  min-height:100vh;
+  padding:26px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  background:linear-gradient(180deg, rgba(6,16,20,0.7), rgba(3,8,10,0.55));
+  border-right:1px solid var(--glass-brd);
+  backdrop-filter:blur(20px);
+  position:sticky;
+  top:0;
+  z-index:20;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:6px 10px 22px 10px;
+}
+.brand-mark{
+  width:38px; height:38px;
+  border-radius:12px;
+  background:linear-gradient(135deg, var(--cyan), var(--cyan-dim));
+  box-shadow:0 0 22px rgba(34,211,238,0.55);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+}
+.brand-text{font-weight:700; font-size:1.05rem; letter-spacing:.2px;}
+.brand-text small{display:block; font-weight:500; font-size:.68rem; color:var(--ink-dim); letter-spacing:.6px; text-transform:uppercase;}
+
+.nav-item{
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px;
+  border-radius:var(--radius-sm);
+  border:1px solid transparent;
+  background:transparent;
+  color:var(--ink-dim);
+  font-family:var(--font-display);
+  font-size:.92rem;
+  font-weight:500;
+  cursor:pointer;
+  text-align:left;
+  transition:all .18s ease;
+}
+.nav-item:hover{background:rgba(34,211,238,0.06); color:var(--ink);}
+.nav-item.active{
+  background:linear-gradient(135deg, rgba(34,211,238,0.16), rgba(34,211,238,0.03));
+  border-color:var(--glass-brd-strong);
+  color:var(--ink);
+  box-shadow:0 6px 20px -8px rgba(34,211,238,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.nav-icon{font-size:1.15rem; width:24px; text-align:center;}
+.nav-footer{margin-top:auto; padding:14px 12px 4px; font-size:.7rem; color:var(--ink-faint); line-height:1.5;}
+
+/* ---------- MAIN ---------- */
+main{flex:1; min-width:0; padding:34px 40px 100px; position:relative;}
+.view{display:none; animation:fadein .35s ease;}
+.view.active{display:block;}
+@keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+.view-head{margin-bottom:26px;}
+.view-eyebrow{font-family:var(--font-mono); font-size:.72rem; letter-spacing:2.5px; text-transform:uppercase; color:var(--cyan-soft); opacity:.8;}
+.view-title{font-size:1.9rem; font-weight:700; margin:4px 0 0; letter-spacing:-.5px;}
+.view-sub{color:var(--ink-dim); font-size:.92rem; margin-top:6px; max-width:60ch;}
+
+.card{
+  background:var(--glass);
+  border:1px solid var(--glass-brd);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg);
+  backdrop-filter:blur(18px);
+  padding:26px;
+}
+.card + .card{margin-top:20px;}
+.card-row{display:flex; gap:20px; flex-wrap:wrap;}
+.card-row > .card{flex:1; min-width:280px;}
+
+.toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:18px;}
+
+/* buttons */
+.btn{
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:.85rem;
+  padding:.7rem 1.15rem;
+  border-radius:14px;
+  border:1px solid var(--glass-brd);
+  background:rgba(255,255,255,0.03);
+  color:var(--ink);
+  cursor:pointer;
+  transition:all .14s ease;
+  display:inline-flex; align-items:center; gap:8px;
+  user-select:none;
+}
+.btn:hover{background:rgba(34,211,238,0.1); border-color:var(--glass-brd-strong); transform:translateY(-1px);}
+.btn:active{transform:scale(.96) translateY(0);}
+.btn-primary{
+  background:linear-gradient(135deg, var(--cyan), var(--cyan-dim));
+  color:#00181b; border:none;
+  box-shadow:0 10px 26px -10px rgba(34,211,238,0.7);
+}
+.btn-primary:hover{filter:brightness(1.08); background:linear-gradient(135deg, var(--cyan), var(--cyan-dim));}
+.btn-ghost{background:transparent; border-color:rgba(255,255,255,0.08);}
+.btn-danger{border-color:rgba(255,110,110,0.35); color:#ffb3b3;}
+.btn-danger:hover{background:rgba(255,90,90,0.1);}
+.btn-sm{padding:.45rem .75rem; font-size:.78rem; border-radius:10px;}
+.btn-lg{padding:1rem 1.6rem; font-size:1rem; border-radius:16px;}
+.btn-block{width:100%; justify-content:center;}
+.btn[disabled]{opacity:.3; cursor:not-allowed; transform:none;}
+.btn-icon{width:40px; height:40px; padding:0; justify-content:center; font-size:1.1rem;}
+
+/* inputs */
+.field-label{font-size:.7rem; text-transform:uppercase; letter-spacing:1.2px; color:var(--ink-faint); margin-bottom:6px; display:block;}
+input[type="text"], input[type="number"]{
+  font-family:var(--font-display);
+  background:rgba(255,255,255,0.03);
+  border:1px solid var(--glass-brd);
+  color:var(--ink);
+  border-radius:12px;
+  padding:.6rem .8rem;
+  font-size:.9rem;
+  outline:none;
+  transition:border-color .15s;
+}
+input[type="text"]:focus, input[type="number"]:focus{border-color:var(--cyan);}
+input[type="color"]{
+  -webkit-appearance:none; appearance:none;
+  width:38px; height:38px; border:none; border-radius:10px;
+  background:transparent; cursor:pointer; padding:0;
+}
+input[type="color"]::-webkit-color-swatch-wrapper{padding:0;}
+input[type="color"]::-webkit-color-swatch{border-radius:10px; border:1px solid var(--glass-brd);}
+.name-input{
+  background:transparent; border:none; border-bottom:2px solid var(--glass-brd);
+  color:var(--ink); font-family:var(--font-display); font-weight:700; font-size:1.15rem;
+  padding:4px 2px; width:100%; outline:none; border-radius:0;
+}
+.name-input:focus{border-bottom-color:var(--cyan);}
+
+/* scoreboard digits — signature element */
+.digits{
+  font-family:var(--font-mono);
+  font-weight:800;
+  font-size:clamp(2.6rem, 7vw, 4.6rem);
+  color:var(--cyan);
+  text-shadow:0 0 14px rgba(34,211,238,0.55), 0 0 46px rgba(34,211,238,0.22);
+  letter-spacing:2px;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.digits-sm{font-size:clamp(1.4rem,3vw,2rem); text-shadow:0 0 10px rgba(34,211,238,0.4);}
+.digits-mid{font-size:clamp(1.8rem,4vw,2.6rem);}
+
+.pill{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:.3rem .75rem; border-radius:999px;
+  font-size:.72rem; font-weight:600; letter-spacing:.4px;
+  background:rgba(34,211,238,0.08); border:1px solid var(--glass-brd);
+  color:var(--cyan-soft);
+}
+.pill-warn{background:rgba(255,120,90,0.1); border-color:rgba(255,120,90,0.35); color:#ffb28e;}
+
+.team-panel{
+  border-radius:var(--radius-md);
+  padding:22px;
+  background:linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+  border:1px solid var(--glass-brd);
+  position:relative;
+  overflow:hidden;
+}
+.team-panel::before{
+  content:'';
+  position:absolute; inset:0;
+  background:radial-gradient(300px 160px at 100% 0%, var(--team-glow, rgba(34,211,238,0.16)), transparent 70%);
+  pointer-events:none;
+}
+.team-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:14px; position:relative;}
+.score-controls{display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; position:relative;}
+.divider{height:1px; background:linear-gradient(90deg, transparent, var(--glass-brd), transparent); margin:22px 0;}
+
+/* frame grid — bowling */
+.frames{display:grid; grid-template-columns:repeat(10, minmax(56px,1fr)); gap:6px; overflow-x:auto; padding-bottom:6px;}
+.frame{
+  border:1px solid var(--glass-brd); border-radius:10px; background:rgba(255,255,255,0.02);
+  min-width:56px; padding:6px 4px; text-align:center; position:relative;
+}
+.frame.current{border-color:var(--cyan); box-shadow:0 0 0 1px var(--cyan), 0 0 18px rgba(34,211,238,0.3);}
+.frame-num{font-size:.6rem; color:var(--ink-faint); position:absolute; top:3px; left:6px;}
+.frame-rolls{display:flex; justify-content:center; gap:3px; margin-top:12px; font-family:var(--font-mono); font-size:.8rem; font-weight:700;}
+.frame-rolls span{min-width:16px;}
+.frame-score{font-family:var(--font-mono); font-weight:800; font-size:1rem; margin-top:6px; color:var(--cyan-soft);}
+.pinpad{display:grid; grid-template-columns:repeat(6, 1fr); gap:8px; margin-top:16px;}
+.pinpad .btn{justify-content:center;}
+
+/* tennis points row */
+.tennis-points{display:flex; gap:26px; margin-top:10px;}
+.tennis-set-badges{display:flex; gap:8px; margin-top:8px;}
+.set-badge{width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; font-size:.85rem; border:1px solid var(--glass-brd); background:rgba(255,255,255,0.02);}
+.set-badge.won{background:linear-gradient(135deg, var(--cyan), var(--cyan-dim)); color:#001417; border:none;}
+
+/* chess clock */
+.chess-wrap{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+.chess-zone{
+  border-radius:var(--radius-lg); padding:34px 20px; text-align:center; cursor:pointer;
+  border:1px solid var(--glass-brd); background:linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+  transition:all .2s; user-select:none; position:relative; overflow:hidden;
+}
+.chess-zone.active{border-color:var(--cyan); box-shadow:0 0 0 1px var(--cyan), 0 0 40px rgba(34,211,238,0.25); background:linear-gradient(160deg, rgba(34,211,238,0.14), rgba(34,211,238,0.02));}
+.chess-zone.flagged{border-color:#ff6a6a; box-shadow:0 0 0 1px #ff6a6a, 0 0 40px rgba(255,90,90,0.3);}
+.chess-zone[disabled], .chess-zone.disabled{opacity:.55; cursor:not-allowed;}
+.chess-name{font-weight:700; margin-bottom:10px; color:var(--ink-dim); font-size:.85rem; text-transform:uppercase; letter-spacing:1px;}
+
+/* universal counters */
+.counter-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:16px;}
+.counter-card{border-radius:var(--radius-md); border:1px solid var(--glass-brd); background:linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)); padding:20px; text-align:center;}
+.counter-value{font-family:var(--font-mono); font-weight:800; font-size:2.6rem; color:var(--cyan); text-shadow:0 0 14px rgba(34,211,238,0.5); margin:10px 0;}
+.counter-actions{display:flex; gap:8px; justify-content:center; margin-top:8px;}
+
+/* responsive */
+@media (max-width: 900px){
+  body{flex-direction:column;}
+  .sidenav{
+    width:100%; min-height:auto; position:fixed; bottom:0; left:0; right:0; top:auto;
+    flex-direction:row; overflow-x:auto; padding:10px 8px; gap:4px; border-right:none;
+    border-top:1px solid var(--glass-brd); z-index:50;
+  }
+  .brand, .nav-footer{display:none;}
+  .nav-item{flex-direction:column; gap:2px; padding:8px 10px; font-size:.62rem; min-width:64px; text-align:center;}
+  .nav-icon{font-size:1.25rem;}
+  main{padding:22px 16px 110px;}
+  .frames{grid-template-columns:repeat(10, minmax(46px,1fr));}
+  .chess-wrap{grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="sidenav" id="sidenav">
+  <div class="brand">
+    <div class="brand-mark">⌗</div>
+    <div class="brand-text">ScoreDeck<small>Multi-tool sportivo</small></div>
+  </div>
+
+  <button class="nav-item active" data-view="bowling" onclick="showView('bowling')"><span class="nav-icon">🎳</span><span class="nav-label">Bowling</span></button>
+  <button class="nav-item" data-view="tennis" onclick="showView('tennis')"><span class="nav-icon">🎾</span><span class="nav-label">Tennis</span></button>
+  <button class="nav-item" data-view="calcio" onclick="showView('calcio')"><span class="nav-icon">⚽</span><span class="nav-label">Calcio</span></button>
+  <button class="nav-item" data-view="basket" onclick="showView('basket')"><span class="nav-icon">🏀</span><span class="nav-label">Basket</span></button>
+  <button class="nav-item" data-view="altri" onclick="showView('altri')"><span class="nav-icon">🏆</span><span class="nav-label">Altri sport</span></button>
+  <button class="nav-item" data-view="scacchi" onclick="showView('scacchi')"><span class="nav-icon">♟️</span><span class="nav-label">Scacchi</span></button>
+  <button class="nav-item" data-view="universale" onclick="showView('universale')"><span class="nav-icon">#️⃣</span><span class="nav-label">Universale</span></button>
+
+  <div class="nav-footer">Tutto è personalizzabile: nomi, colori e incrementi. I dati restano solo in questa sessione del browser.</div>
+</nav>
+
+<main>
+
+  <!-- ============ BOWLING ============ -->
+  <section id="view-bowling" class="view active">
+    <div class="view-head">
+      <span class="view-eyebrow">Segnapunti · 10 frame</span>
+      <h1 class="view-title">Bowling</h1>
+      <p class="view-sub">Calcolo automatico di strike, spare e punteggio progressivo secondo le regole ufficiali.</p>
+    </div>
+    <div class="card">
+      <div class="toolbar" id="bowling-tabs"></div>
+      <div id="bowling-frames"></div>
+      <div class="pinpad" id="bowling-pinpad"></div>
+      <div class="toolbar" style="margin-top:16px; margin-bottom:0;">
+        <button class="btn btn-ghost" onclick="Bowling.undo()">↩ Annulla tiro</button>
+        <button class="btn btn-ghost" onclick="Bowling.addPlayer()">+ Aggiungi giocatore</button>
+        <button class="btn btn-danger" onclick="Bowling.resetActive()">Azzera giocatore</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TENNIS ============ -->
+  <section id="view-tennis" class="view">
+    <div class="view-head">
+      <span class="view-eyebrow">Segnapunti · Set e game</span>
+      <h1 class="view-title">Tennis</h1>
+      <p class="view-sub">Punteggio 0-15-30-40 con vantaggio, tie-break automatico sul 6-6 e conteggio set.</p>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <span class="field-label" style="margin:0;">Formato match</span>
+        <button class="btn btn-sm" id="tennis-bo3" onclick="Tennis.setBestOf(3)">Al meglio dei 3</button>
+        <button class="btn btn-sm" id="tennis-bo5" onclick="Tennis.setBestOf(5)">Al meglio dei 5</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost btn-sm" onclick="Tennis.undo()">↩ Annulla punto</button>
+        <button class="btn btn-danger btn-sm" onclick="Tennis.reset()">Reset match</button>
+      </div>
+      <div id="tennis-body"></div>
+    </div>
+  </section>
+
+  <!-- ============ CALCIO ============ -->
+  <section id="view-calcio" class="view">
+    <div class="view-head">
+      <span class="view-eyebrow">Segnapunti · Partita</span>
+      <h1 class="view-title">Calcio</h1>
+      <p class="view-sub">Marcatore, cronometro di gara e cartellini per due squadre personalizzabili.</p>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <div class="digits digits-mid" id="calcio-clock">00:00</div>
+        <div style="flex:1"></div>
+        <span class="pill" id="calcio-half-pill">1° Tempo</span>
+        <button class="btn btn-sm" onclick="Calcio.prevHalf()">‹ Tempo</button>
+        <button class="btn btn-sm" onclick="Calcio.nextHalf()">Tempo ›</button>
+      </div>
+      <div class="toolbar">
+        <button class="btn btn-primary" id="calcio-timer-btn" onclick="Calcio.toggleTimer()">▶ Avvia</button>
+        <button class="btn btn-ghost" onclick="Calcio.resetTimer()">↺ Reset cronometro</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-danger btn-sm" onclick="Calcio.resetMatch()">Reset partita</button>
+      </div>
+      <div class="card-row" id="calcio-teams"></div>
+    </div>
+  </section>
+
+  <!-- ============ BASKET ============ -->
+  <section id="view-basket" class="view">
+    <div class="view-head">
+      <span class="view-eyebrow">Segnapunti · Quarti e falli</span>
+      <h1 class="view-title">Basket</h1>
+      <p class="view-sub">Punti da 1, 2 e 3, falli di squadra con bonus, cronometro di gara e shot clock.</p>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <span class="pill" id="basket-quarter-pill">Quarto 1</span>
+        <button class="btn btn-sm" onclick="Basket.prevQuarter()">‹</button>
+        <button class="btn btn-sm" onclick="Basket.nextQuarter()">›</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-danger btn-sm" onclick="Basket.resetMatch()">Reset partita</button>
+      </div>
+      <div class="card-row">
+        <div class="card" style="flex:0 0 auto; min-width:220px;">
+          <span class="field-label">Cronometro di gara</span>
+          <div class="digits digits-mid" id="basket-clock">10:00</div>
+          <div class="toolbar" style="margin-top:10px; margin-bottom:0;">
+            <button class="btn btn-sm btn-primary" id="basket-clock-btn" onclick="Basket.toggleClock()">▶</button>
+            <button class="btn btn-sm btn-ghost" onclick="Basket.resetClock()">↺</button>
+            <input type="number" class="field-num" id="basket-clock-minutes" value="10" min="1" max="60" style="width:64px;" onchange="Basket.setClockMinutes(this.value)">
+            <span style="color:var(--ink-faint); font-size:.75rem;">min</span>
+          </div>
+        </div>
+        <div class="card" style="flex:0 0 auto; min-width:180px;">
+          <span class="field-label">Shot clock</span>
+          <div class="digits digits-mid" id="basket-shotclock">24</div>
+          <div class="toolbar" style="margin-top:10px; margin-bottom:0;">
+            <button class="btn btn-sm btn-primary" id="basket-shot-btn" onclick="Basket.toggleShotClock()">▶</button>
+            <button class="btn btn-sm btn-ghost" onclick="Basket.resetShotClock(24)">24</button>
+            <button class="btn btn-sm btn-ghost" onclick="Basket.resetShotClock(14)">14</button>
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="card-row" id="basket-teams"></div>
+    </div>
+  </section>
+
+  <!-- ============ ALTRI SPORT ============ -->
+  <section id="view-altri" class="view">
+    <div class="view-head">
+      <span class="view-eyebrow">Segnapunti · Generico a squadre</span>
+      <h1 class="view-title">Altri sport</h1>
+      <p class="view-sub">Un marcatore adattabile a pallavolo, ping pong, rugby o qualsiasi sport a squadre: scegli nome ed incremento.</p>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <div>
+          <span class="field-label">Nome sport</span>
+          <input type="text" class="name-input" style="font-size:1rem;" id="altri-sport-name" value="Pallavolo" oninput="Altri.state.sportName=this.value">
+        </div>
+        <div style="flex:1"></div>
+        <div>
+          <span class="field-label">Punti per azione</span>
+          <div class="toolbar" style="margin:0;">
+            <button class="btn btn-sm" data-inc="1" onclick="Altri.setIncrement(1)">+1</button>
+            <button class="btn btn-sm" data-inc="2" onclick="Altri.setIncrement(2)">+2</button>
+            <button class="btn btn-sm" data-inc="3" onclick="Altri.setIncrement(3)">+3</button>
+            <input type="number" style="width:60px;" id="altri-custom-inc" placeholder="?" onchange="Altri.setIncrement(parseInt(this.value)||1)">
+          </div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <span class="pill">Periodo/Set: <b id="altri-period-num" style="margin-left:4px;">1</b></span>
+        <button class="btn btn-sm" onclick="Altri.period(-1)">‹</button>
+        <button class="btn btn-sm" onclick="Altri.period(1)">›</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-danger btn-sm" onclick="Altri.reset()">Reset</button>
+      </div>
+      <div class="card-row" id="altri-teams"></div>
+    </div>
+  </section>
+
+  <!-- ============ SCACCHI ============ -->
+  <section id="view-scacchi" class="view">
+    <div class="view-head">
+      <span class="view-eyebrow">Orologio · Tempo di riflessione</span>
+      <h1 class="view-title">Orologio scacchi</h1>
+      <p class="view-sub">Tocca il riquadro del giocatore che ha appena mosso per passare il turno. Supporta incremento Fischer.</p>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <div>
+          <span class="field-label">Minuti a giocatore</span>
+          <input type="number" id="chess-minutes" value="5" min="1" max="180" style="width:70px;">
+        </div>
+        <div>
+          <span class="field-label">Incremento (sec/mossa)</span>
+          <input type="number" id="chess-increment" value="0" min="0" max="60" style="width:70px;">
+        </div>
+        <button class="btn btn-primary" style="align-self:flex-end;" onclick="Chess.applySettings()">Imposta e reset</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-ghost" id="chess-pause-btn" style="align-self:flex-end;" onclick="Chess.togglePause()">⏸ Pausa</button>
+      </div>
+      <div class="chess-wrap" id="chess-zones"></div>
+    </div>
+  </section>
+
+  <!-- ============ UNIVERSALE ============ -->
+  <section id="view-universale" class="view">
+    <div class="view-head">
+      <span class="view-eyebrow">Segnapunti · Libero</span>
+      <h1 class="view-title">Segnapunti universale</h1>
+      <p class="view-sub">Aggiungi quanti contatori vuoi: giochi da tavolo, quiz, gare a punti o qualsiasi conteggio libero.</p>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="Universal.add()">+ Nuovo contatore</button>
+        <div style="flex:1"></div>
+        <button class="btn btn-danger btn-sm" onclick="Universal.resetAll()">Azzera tutti</button>
+      </div>
+      <div class="counter-grid" id="universal-grid"></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function el(id){ return document.getElementById(id); }
+function pad2(n){ return String(n).padStart(2,'0'); }
+function fmtClock(totalSeconds){
+  totalSeconds = Math.max(0, Math.round(totalSeconds));
+  const m = Math.floor(totalSeconds/60), s = totalSeconds%60;
+  return pad2(m)+':'+pad2(s);
+}
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  el('view-'+name).classList.add('active');
+  document.querySelector('.nav-item[data-view="'+name+'"]').classList.add('active');
+}
+
+/* ============================================================
+   BOWLING
+   ============================================================ */
+const Bowling = {
+  state:{
+    active:0,
+    players:[
+      {name:'Giocatore 1', frames:Array.from({length:10},()=>[])},
+      {name:'Giocatore 2', frames:Array.from({length:10},()=>[])}
+    ]
+  },
+  history:[],
+
+  isTenthComplete(f){
+    if(f.length<2) return false;
+    if(f.length===2){
+      if(f[0]===10) return false;
+      if(f[0]+f[1]===10) return false;
+      return true;
+    }
+    return f.length===3;
+  },
+  getNextRolls(frames, fromIdx, count){
+    const rolls=[];
+    for(let i=fromIdx+1;i<10 && rolls.length<count;i++){
+      const f=frames[i]||[];
+      for(const r of f){ rolls.push(r); if(rolls.length===count) break; }
+    }
+    return rolls;
+  },
+  calcScores(frames){
+    const frameScores=new Array(10).fill(null);
+    for(let i=0;i<10;i++){
+      const f=frames[i];
+      if(!f||f.length===0){ frameScores[i]=null; continue; }
+      if(i<9){
+        if(f[0]===10){
+          const bonus=this.getNextRolls(frames,i,2);
+          frameScores[i]= bonus.length<2 ? null : 10+bonus[0]+bonus[1];
+        } else if(f.length===2 && f[0]+f[1]===10){
+          const bonus=this.getNextRolls(frames,i,1);
+          frameScores[i]= bonus.length<1 ? null : 10+bonus[0];
+        } else if(f.length===2){
+          frameScores[i]=f[0]+f[1];
+        } else frameScores[i]=null;
+      } else {
+        frameScores[i]= this.isTenthComplete(f) ? f.reduce((a,b)=>a+b,0) : null;
+      }
+    }
+    let total=0; const running=new Array(10).fill(null);
+    for(let i=0;i<10;i++){ if(frameScores[i]===null) break; total+=frameScores[i]; running[i]=total; }
+    return {frameScores, running};
+  },
+  currentFrameIndex(p){
+    for(let i=0;i<10;i++){
+      const f=p.frames[i];
+      const complete = i<9 ? (f[0]===10 || f.length===2) : this.isTenthComplete(f);
+      if(!complete) return i;
+    }
+    return -1;
+  },
+  maxPinsFor(p, idx){
+    const f=p.frames[idx];
+    if(idx<9){
+      if(f.length===0) return 10;
+      return 10-f[0];
+    } else {
+      if(f.length===0) return 10;
+      if(f.length===1) return f[0]===10 ? 10 : 10-f[0];
+      if(f.length===2){
+        if(f[0]===10) return f[1]===10 ? 10 : 10-f[1];
+        if(f[0]+f[1]===10) return 10;
+      }
+      return 0;
+    }
+  },
+  roll(pins){
+    const p=this.state.players[this.state.active];
+    const idx=this.currentFrameIndex(p);
+    if(idx===-1) return;
+    const max=this.maxPinsFor(p,idx);
+    if(pins>max) return;
+    p.frames[idx].push(pins);
+    this.history.push({player:this.state.active, frame:idx});
+    this.render();
+  },
+  undo(){
+    const last=this.history.pop();
+    if(!last) return;
+    const p=this.state.players[last.player];
+    if(p.frames[last.frame].length>0) p.frames[last.frame].pop();
+    this.render();
+  },
+  addPlayer(){
+    this.state.players.push({name:'Giocatore '+(this.state.players.length+1), frames:Array.from({length:10},()=>[])});
+    this.render();
+  },
+  resetActive(){
+    this.state.players[this.state.active].frames = Array.from({length:10},()=>[]);
+    this.history = this.history.filter(h=>h.player!==this.state.active);
+    this.render();
+  },
+  setActive(i){ this.state.active=i; this.render(); },
+  renamePlayer(i, val){ this.state.players[i].name = val; },
+
+  symbolFor(f, i, isTenth){
+    // returns array of display strings for the rolls of a frame
+    if(f.length===0) return [];
+    if(!isTenth){
+      if(f[0]===10) return ['X'];
+      if(f.length===2){
+        return [ f[0]===0?'-':String(f[0]), (f[0]+f[1]===10)?'/':(f[1]===0?'-':String(f[1])) ];
+      }
+      return [ f[0]===0?'-':String(f[0]) ];
+    } else {
+      const out=[];
+      for(let k=0;k<f.length;k++){
+        const v=f[k];
+        if(v===10){ out.push('X'); continue; }
+        if(k>0){
+          const prev=f[k-1];
+          if(prev!==10 && prev+v===10){ out.push('/'); continue; }
+        }
+        out.push(v===0?'-':String(v));
+      }
+      return out;
+    }
+  },
+
+  render(){
+    const tabs = this.state.players.map((p,i)=>{
+      return '<button class="btn btn-sm '+(i===this.state.active?'btn-primary':'btn-ghost')+'" onclick="Bowling.setActive('+i+')">'+p.name+'</button>';
+    }).join('');
+    el('bowling-tabs').innerHTML = tabs;
+
+    const p = this.state.players[this.state.active];
+    const {frameScores, running} = this.calcScores(p.frames);
+    const curIdx = this.currentFrameIndex(p);
+
+    let framesHtml = '<div style="margin-bottom:10px;"><input type="text" class="name-input" style="max-width:260px;" value="'+p.name+'" oninput="Bowling.renamePlayer('+this.state.active+', this.value)"></div>';
+    framesHtml += '<div class="frames">';
+    for(let i=0;i<10;i++){
+      const f=p.frames[i];
+      const syms = this.symbolFor(f, i, i===9);
+      const rollsHtml = syms.map(s=>'<span>'+s+'</span>').join('');
+      const scoreHtml = frameScores[i]!==null ? running[i] : '';
+      framesHtml += '<div class="frame'+(i===curIdx?' current':'')+'"><span class="frame-num">'+(i+1)+'</span><div class="frame-rolls">'+rollsHtml+'</div><div class="frame-score">'+scoreHtml+'</div></div>';
+    }
+    framesHtml += '</div>';
+    framesHtml += '<div style="margin-top:14px;" class="digits digits-mid">'+(running[9]!==null ? running[9] : (running.filter(x=>x!==null).pop() ?? 0))+'</div>';
+    el('bowling-frames').innerHTML = framesHtml;
+
+    const max = curIdx===-1 ? -1 : this.maxPinsFor(p, curIdx);
+    let pad='';
+    for(let n=0;n<=10;n++){
+      const disabled = curIdx===-1 || n>max;
+      pad += '<button class="btn '+(n===10?'btn-primary':'')+'" '+(disabled?'disabled':'')+' onclick="Bowling.roll('+n+')">'+(n===10?'X (10)':n)+'</button>';
+    }
+    el('bowling-pinpad').innerHTML = pad;
+  }
+};
+
+/* ============================================================
+   TENNIS
+   ============================================================ */
+const Tennis = {
+  state:{
+    p1:{name:'Giocatore 1', color:'#22d3ee'},
+    p2:{name:'Giocatore 2', color:'#67e8f9'},
+    bestOf:3
+  },
+  match:null,
+  history:[],
+
+  createMatch(bestOf){
+    return { bestOf, setsWon:[0,0], completedSets:[], games:[0,0], points:[0,0], tiebreak:false, matchOver:false };
+  },
+  init(){ this.match = this.createMatch(3); },
+  setBestOf(n){ this.state.bestOf=n; this.match=this.createMatch(n); this.history=[]; this.render(); },
+  reset(){ this.match=this.createMatch(this.state.bestOf); this.history=[]; this.render(); },
+  undo(){
+    const prev=this.history.pop();
+    if(prev) this.match=prev;
+    this.render();
+  },
+  pointLabel(mine, theirs, tiebreak){
+    if(tiebreak) return String(mine);
+    if(mine>=3 && theirs>=3){
+      if(mine===theirs) return '40';
+      if(mine-theirs>=1) return 'AD';
+      return '40';
+    }
+    return ['0','15','30','40'][mine];
+  },
+  winSet(m, idx){
+    m.completedSets.push([...m.games]);
+    m.setsWon[idx]++;
+    m.games=[0,0]; m.points=[0,0]; m.tiebreak=false;
+    const needed=Math.ceil(m.bestOf/2);
+    if(m.setsWon[idx]>=needed) m.matchOver=true;
+  },
+  winGame(m, idx){
+    m.games[idx]++; m.points=[0,0];
+    const other=idx===0?1:0;
+    if(m.games[idx]>=6 && m.games[idx]-m.games[other]>=2){ this.winSet(m, idx); }
+    else if(m.games[idx]===6 && m.games[other]===6){ m.tiebreak=true; }
+  },
+  addPoint(idx){
+    if(this.match.matchOver) return;
+    this.history.push(clone(this.match));
+    const m=this.match, other=idx===0?1:0;
+    if(m.tiebreak){
+      m.points[idx]++;
+      if(m.points[idx]>=7 && m.points[idx]-m.points[other]>=2){ m.games[idx]=7; this.winSet(m, idx); }
+    } else {
+      m.points[idx]++;
+      const mine=m.points[idx], theirs=m.points[other];
+      if(mine>=4 && mine-theirs>=2){ this.winGame(m, idx); }
+    }
+    this.render();
+  },
+  renameP(i, val){ (i===0?this.state.p1:this.state.p2).name = val; },
+
+  render(){
+    document.getElementById('tennis-bo3').className = 'btn btn-sm ' + (this.state.bestOf===3?'btn-primary':'btn-ghost');
+    document.getElementById('tennis-bo5').className = 'btn btn-sm ' + (this.state.bestOf===5?'btn-primary':'btn-ghost');
+    const m=this.match;
+    const setsHtml=(idx)=>{
+      let h='<div class="tennis-set-badges">';
+      m.completedSets.forEach(s=>{ h+='<div class="set-badge '+(s[idx]>s[idx===0?1:0]?'won':'')+'">'+s[idx]+'</div>'; });
+      h+='<div class="set-badge won" style="opacity:.6;">'+m.games[idx]+'</div>';
+      h+='</div>';
+      return h;
+    };
+    const label1 = m.matchOver ? '' : this.pointLabel(m.points[0], m.points[1], m.tiebreak);
+    const label2 = m.matchOver ? '' : this.pointLabel(m.points[1], m.points[0], m.tiebreak);
+
+    let html = '<div class="card-row">';
+    [ {p:this.state.p1, idx:0, label:label1}, {p:this.state.p2, idx:1, label:label2} ].forEach(({p,idx,label})=>{
+      html += '<div class="team-panel" style="--team-glow: '+p.color+'33;">'+
+        '<div class="team-top">'+
+          '<input type="text" class="name-input" value="'+p.name+'" oninput="Tennis.renameP('+idx+', this.value)">'+
+          '<input type="color" value="'+p.color+'" onchange="Tennis.state.p'+(idx+1)+'.color=this.value; Tennis.render();">'+
+        '</div>'+
+        '<div style="display:flex; align-items:baseline; gap:14px;">'+
+          '<div class="digits">'+(label==='AD'?'<span style=\"font-size:.5em;\">AD</span>':label)+'</div>'+
+          '<div class="pill">Set: '+m.setsWon[idx]+(m.tiebreak?' · Tie-break':'')+'</div>'+
+        '</div>'+
+        setsHtml(idx)+
+        '<div class="score-controls">'+
+          '<button class="btn btn-primary btn-lg" '+(m.matchOver?'disabled':'')+' onclick="Tennis.addPoint('+idx+')">+ Punto</button>'+
+        '</div>'+
+      '</div>';
+    });
+    html += '</div>';
+    if(m.matchOver){
+      const winner = m.setsWon[0]>m.setsWon[1] ? this.state.p1.name : this.state.p2.name;
+      html += '<div class="divider"></div><div class="pill" style="font-size:.9rem; padding:.6rem 1rem;">🏆 Match vinto da '+winner+'</div>';
+    }
+    el('tennis-body').innerHTML = html;
+  }
+};
+
+/* ============================================================
+   CALCIO
+   ============================================================ */
+const Calcio = {
+  state:{
+    teamA:{name:'Squadra A', score:0, color:'#22d3ee', yellow:0, red:0},
+    teamB:{name:'Squadra B', score:0, color:'#67e8f9', yellow:0, red:0},
+    half:1
+  },
+  timer:{seconds:0, running:false, intervalId:null},
+
+  toggleTimer(){
+    this.timer.running = !this.timer.running;
+    if(this.timer.running){
+      this.timer.intervalId = setInterval(()=>{ this.timer.seconds++; this.renderClock(); }, 1000);
+    } else {
+      clearInterval(this.timer.intervalId);
+    }
+    this.renderControls();
+  },
+  resetTimer(){ this.timer.seconds=0; this.timer.running=false; clearInterval(this.timer.intervalId); this.renderClock(); this.renderControls(); },
+  nextHalf(){ this.state.half++; this.renderControls(); },
+  prevHalf(){ this.state.half=Math.max(1,this.state.half-1); this.renderControls(); },
+  goal(team, delta){
+    const t=this.state[team];
+    t.score=Math.max(0, t.score+delta);
+    this.renderTeams();
+  },
+  card(team, type, delta){
+    const t=this.state[team];
+    t[type]=Math.max(0, t[type]+delta);
+    this.renderTeams();
+  },
+  rename(team, val){ this.state[team].name=val; },
+  recolor(team, val){ this.state[team].color=val; this.renderTeams(); },
+  resetMatch(){
+    ['teamA','teamB'].forEach(t=>{ this.state[t].score=0; this.state[t].yellow=0; this.state[t].red=0; });
+    this.state.half=1;
+    this.resetTimer();
+    this.renderTeams(); this.renderControls();
+  },
+  renderClock(){ el('calcio-clock').textContent = fmtClock(this.timer.seconds); },
+  renderControls(){
+    el('calcio-timer-btn').innerHTML = this.timer.running ? '⏸ Pausa' : '▶ Avvia';
+    el('calcio-half-pill').textContent = this.state.half+'° Tempo';
+  },
+  renderTeams(){
+    let html='';
+    ['teamA','teamB'].forEach(key=>{
+      const t=this.state[key];
+      html += '<div class="team-panel" style="--team-glow: '+t.color+'33;">'+
+        '<div class="team-top">'+
+          '<input type="text" class="name-input" value="'+t.name+'" oninput="Calcio.rename(\''+key+'\', this.value)">'+
+          '<input type="color" value="'+t.color+'" onchange="Calcio.recolor(\''+key+'\', this.value)">'+
+        '</div>'+
+        '<div class="digits">'+t.score+'</div>'+
+        '<div class="score-controls">'+
+          '<button class="btn btn-primary" onclick="Calcio.goal(\''+key+'\',1)">⚽ + Gol</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="Calcio.goal(\''+key+'\',-1)">− Gol</button>'+
+        '</div>'+
+        '<div class="score-controls">'+
+          '<button class="btn btn-sm" style="border-color:#e6c34c66; color:#f0d878;" onclick="Calcio.card(\''+key+'\',\'yellow\',1)">🟨 '+t.yellow+'</button>'+
+          '<button class="btn btn-sm" style="border-color:#ff6a6a66; color:#ff9c9c;" onclick="Calcio.card(\''+key+'\',\'red\',1)">🟥 '+t.red+'</button>'+
+        '</div>'+
+      '</div>';
+    });
+    el('calcio-teams').innerHTML = html;
+  },
+  render(){ this.renderClock(); this.renderControls(); this.renderTeams(); }
+};
+
+/* ============================================================
+   BASKET
+   ============================================================ */
+const Basket = {
+  state:{
+    teamA:{name:'Squadra A', score:0, fouls:0, color:'#22d3ee'},
+    teamB:{name:'Squadra B', score:0, fouls:0, color:'#67e8f9'},
+    quarter:1
+  },
+  clock:{seconds:600, minutes:10, running:false, intervalId:null},
+  shot:{seconds:24, running:false, intervalId:null},
+
+  points(team, delta){ const t=this.state[team]; t.score=Math.max(0,t.score+delta); this.renderTeams(); },
+  foul(team, delta){ const t=this.state[team]; t.fouls=Math.max(0,t.fouls+delta); this.renderTeams(); },
+  rename(team,val){ this.state[team].name=val; },
+  recolor(team,val){ this.state[team].color=val; this.renderTeams(); },
+  nextQuarter(){ this.state.quarter++; this.renderMeta(); },
+  prevQuarter(){ this.state.quarter=Math.max(1,this.state.quarter-1); this.renderMeta(); },
+
+  toggleClock(){
+    this.clock.running=!this.clock.running;
+    if(this.clock.running){
+      this.clock.intervalId=setInterval(()=>{
+        if(this.clock.seconds>0){ this.clock.seconds--; this.renderClock(); }
+        else { this.clock.running=false; clearInterval(this.clock.intervalId); this.renderClock(); }
+      },1000);
+    } else clearInterval(this.clock.intervalId);
+    this.renderClock();
+  },
+  resetClock(){ this.clock.seconds=this.clock.minutes*60; this.clock.running=false; clearInterval(this.clock.intervalId); this.renderClock(); },
+  setClockMinutes(v){ this.clock.minutes=parseInt(v)||10; this.resetClock(); },
+
+  toggleShotClock(){
+    this.shot.running=!this.shot.running;
+    if(this.shot.running){
+      this.shot.intervalId=setInterval(()=>{
+        if(this.shot.seconds>0){ this.shot.seconds--; this.renderShot(); }
+        else { this.shot.running=false; clearInterval(this.shot.intervalId); this.renderShot(); }
+      },1000);
+    } else clearInterval(this.shot.intervalId);
+    this.renderShot();
+  },
+  resetShotClock(v){ this.shot.seconds=v; this.shot.running=false; clearInterval(this.shot.intervalId); this.renderShot(); },
+
+  resetMatch(){
+    ['teamA','teamB'].forEach(t=>{ this.state[t].score=0; this.state[t].fouls=0; });
+    this.state.quarter=1;
+    this.resetClock(); this.resetShotClock(24);
+    this.renderTeams(); this.renderMeta();
+  },
+
+  renderClock(){
+    el('basket-clock').textContent = fmtClock(this.clock.seconds);
+    el('basket-clock-btn').textContent = this.clock.running ? '⏸' : '▶';
+  },
+  renderShot(){
+    el('basket-shotclock').textContent = this.shot.seconds;
+    el('basket-shotclock').style.color = this.shot.seconds<=5 ? '#ff6a6a' : '';
+    el('basket-shot-btn').textContent = this.shot.running ? '⏸' : '▶';
+  },
+  renderMeta(){ el('basket-quarter-pill').textContent = 'Quarto '+this.state.quarter; },
+  renderTeams(){
+    let html='';
+    ['teamA','teamB'].forEach(key=>{
+      const t=this.state[key];
+      const bonus = t.fouls>=5;
+      html += '<div class="team-panel" style="--team-glow: '+t.color+'33;">'+
+        '<div class="team-top">'+
+          '<input type="text" class="name-input" value="'+t.name+'" oninput="Basket.rename(\''+key+'\', this.value)">'+
+          '<input type="color" value="'+t.color+'" onchange="Basket.recolor(\''+key+'\', this.value)">'+
+        '</div>'+
+        '<div class="digits">'+t.score+'</div>'+
+        '<div class="score-controls">'+
+          '<button class="btn btn-primary" onclick="Basket.points(\''+key+'\',1)">+1</button>'+
+          '<button class="btn btn-primary" onclick="Basket.points(\''+key+'\',2)">+2</button>'+
+          '<button class="btn btn-primary" onclick="Basket.points(\''+key+'\',3)">+3</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="Basket.points(\''+key+'\',-1)">−1</button>'+
+        '</div>'+
+        '<div class="score-controls">'+
+          '<button class="btn btn-sm '+(bonus?'pill-warn':'')+'" onclick="Basket.foul(\''+key+'\',1)">Falli: '+t.fouls+(bonus?' · Bonus':'')+'</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="Basket.foul(\''+key+'\',-1)">−</button>'+
+        '</div>'+
+      '</div>';
+    });
+    el('basket-teams').innerHTML = html;
+  },
+  render(){ this.renderClock(); this.renderShot(); this.renderMeta(); this.renderTeams(); }
+};
+
+/* ============================================================
+   ALTRI SPORT (generico)
+   ============================================================ */
+const Altri = {
+  state:{
+    sportName:'Pallavolo',
+    increment:1,
+    period:1,
+    teamA:{name:'Squadra A', score:0, color:'#22d3ee'},
+    teamB:{name:'Squadra B', score:0, color:'#67e8f9'}
+  },
+  setIncrement(v){ this.state.increment = Math.max(1, v||1); this.render(); },
+  point(team, sign){ const t=this.state[team]; t.score=Math.max(0, t.score + sign*this.state.increment); this.renderTeams(); },
+  period(delta){ this.state.period = Math.max(1, this.state.period+delta); el('altri-period-num').textContent = this.state.period; },
+  rename(team,val){ this.state[team].name=val; },
+  recolor(team,val){ this.state[team].color=val; this.renderTeams(); },
+  reset(){
+    ['teamA','teamB'].forEach(t=>{ this.state[t].score=0; });
+    this.state.period=1;
+    el('altri-period-num').textContent=1;
+    this.renderTeams();
+  },
+  renderTeams(){
+    let html='';
+    ['teamA','teamB'].forEach(key=>{
+      const t=this.state[key];
+      html += '<div class="team-panel" style="--team-glow: '+t.color+'33;">'+
+        '<div class="team-top">'+
+          '<input type="text" class="name-input" value="'+t.name+'" oninput="Altri.rename(\''+key+'\', this.value)">'+
+          '<input type="color" value="'+t.color+'" onchange="Altri.recolor(\''+key+'\', this.value)">'+
+        '</div>'+
+        '<div class="digits">'+t.score+'</div>'+
+        '<div class="score-controls">'+
+          '<button class="btn btn-primary" onclick="Altri.point(\''+key+'\',1)">+ '+this.state.increment+'</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="Altri.point(\''+key+'\',-1)">− '+this.state.increment+'</button>'+
+        '</div>'+
+      '</div>';
+    });
+    el('altri-teams').innerHTML = html;
+  },
+  render(){ this.renderTeams(); }
+};
+
+/* ============================================================
+   SCACCHI (orologio)
+   ============================================================ */
+const Chess = {
+  state:{
+    p1:{name:'Bianco', ms:5*60*1000},
+    p2:{name:'Nero', ms:5*60*1000},
+    incrementMs:0,
+    active:null,
+    running:false,
+    started:false
+  },
+  intervalId:null,
+
+  applySettings(){
+    const min = parseInt(el('chess-minutes').value)||5;
+    const inc = parseInt(el('chess-increment').value)||0;
+    clearInterval(this.intervalId);
+    this.state = { p1:{name:this.state.p1.name, ms:min*60*1000}, p2:{name:this.state.p2.name, ms:min*60*1000}, incrementMs:inc*1000, active:null, running:false, started:false };
+    this.render();
+  },
+  tap(idx){
+    const other = idx===0?1:0;
+    const key = idx===0?'p1':'p2';
+    const otherKey = other===0?'p1':'p2';
+    if(this.state[key].ms<=0) return; // flagged, no more taps
+    if(!this.state.started){
+      // first tap: start opponent's clock
+      this.state.started = true;
+      this.state.active = other;
+      this.state.running = true;
+      this.startInterval();
+      this.render();
+      return;
+    }
+    if(this.state.active !== idx) return; // can only tap your own running clock
+    this.state[key].ms += this.state.incrementMs;
+    this.state.active = other;
+    this.render();
+  },
+  startInterval(){
+    clearInterval(this.intervalId);
+    this.intervalId = setInterval(()=>{
+      if(!this.state.running || this.state.active===null) return;
+      const key = this.state.active===0?'p1':'p2';
+      this.state[key].ms = Math.max(0, this.state[key].ms - 100);
+      if(this.state[key].ms<=0){ this.state.running=false; clearInterval(this.intervalId); }
+      this.renderTimesOnly();
+    }, 100);
+  },
+  togglePause(){
+    if(!this.state.started) return;
+    this.state.running = !this.state.running;
+    if(this.state.running) this.startInterval(); else clearInterval(this.intervalId);
+    el('chess-pause-btn').textContent = this.state.running ? '⏸ Pausa' : '▶ Riprendi';
+  },
+  renamePlayer(i,val){ (i===0?this.state.p1:this.state.p2).name = val; },
+  fmt(ms){
+    const totalSec = Math.ceil(ms/1000);
+    const m=Math.floor(totalSec/60), s=totalSec%60;
+    return pad2(m)+':'+pad2(s);
+  },
+  renderTimesOnly(){
+    const z1=el('chess-time-0'), z2=el('chess-time-1');
+    if(z1) z1.textContent = this.fmt(this.state.p1.ms);
+    if(z2) z2.textContent = this.fmt(this.state.p2.ms);
+    [0,1].forEach(i=>{
+      const zone = el('chess-zone-'+i);
+      if(!zone) return;
+      zone.classList.toggle('active', this.state.active===i && this.state.running);
+      zone.classList.toggle('flagged', this.state[i===0?'p1':'p2'].ms<=0);
+    });
+  },
+  render(){
+    let html='';
+    [0,1].forEach(i=>{
+      const p = i===0?this.state.p1:this.state.p2;
+      const isActive = this.state.active===i && this.state.running;
+      const flagged = p.ms<=0;
+      html += '<div class="chess-zone'+(isActive?' active':'')+(flagged?' flagged':'')+'" id="chess-zone-'+i+'" onclick="Chess.tap('+i+')">'+
+        '<div class="chess-name"><input type="text" class="name-input" style="text-align:center; font-size:.85rem; text-transform:uppercase;" value="'+p.name+'" onclick="event.stopPropagation()" oninput="Chess.renamePlayer('+i+', this.value)"></div>'+
+        '<div class="digits" id="chess-time-'+i+'">'+this.fmt(p.ms)+'</div>'+
+        (flagged ? '<div class="pill pill-warn" style="margin-top:10px;">Tempo scaduto</div>' : '<div class="pill" style="margin-top:10px;">'+(isActive?'In movimento':'In attesa')+'</div>')+
+      '</div>';
+    });
+    el('chess-zones').innerHTML = html;
+  }
+};
+
+/* ============================================================
+   UNIVERSALE
+   ============================================================ */
+const Universal = {
+  state:{ counters:[
+    {id:1, name:'Giocatore 1', value:0, step:1, color:'#22d3ee'},
+    {id:2, name:'Giocatore 2', value:0, step:1, color:'#67e8f9'}
+  ], nextId:3},
+
+  add(){
+    this.state.counters.push({id:this.state.nextId++, name:'Nuovo contatore', value:0, step:1, color:'#22d3ee'});
+    this.render();
+  },
+  remove(id){ this.state.counters = this.state.counters.filter(c=>c.id!==id); this.render(); },
+  inc(id){ const c=this.state.counters.find(c=>c.id===id); c.value += c.step; this.renderOne(id); },
+  dec(id){ const c=this.state.counters.find(c=>c.id===id); c.value -= c.step; this.renderOne(id); },
+  setStep(id,val){ const c=this.state.counters.find(c=>c.id===id); c.step = parseInt(val)||1; },
+  rename(id,val){ const c=this.state.counters.find(c=>c.id===id); c.name=val; },
+  recolor(id,val){ const c=this.state.counters.find(c=>c.id===id); c.color=val; this.renderOne(id); },
+  resetOne(id){ const c=this.state.counters.find(c=>c.id===id); c.value=0; this.renderOne(id); },
+  resetAll(){ this.state.counters.forEach(c=>c.value=0); this.render(); },
+
+  cardHtml(c){
+    return '<div class="counter-card" id="uni-card-'+c.id+'" style="border-color: '+c.color+'44;">'+
+      '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">'+
+        '<input type="color" value="'+c.color+'" onchange="Universal.recolor('+c.id+', this.value)">'+
+        '<button class="btn btn-icon btn-ghost btn-sm" onclick="Universal.remove('+c.id+')">✕</button>'+
+      '</div>'+
+      '<input type="text" class="name-input" style="text-align:center; margin-top:6px;" value="'+c.name+'" oninput="Universal.rename('+c.id+', this.value)">'+
+      '<div class="counter-value" id="uni-value-'+c.id+'" style="text-shadow:0 0 14px '+c.color+'88; color:'+c.color+';">'+c.value+'</div>'+
+      '<div class="counter-actions">'+
+        '<button class="btn btn-primary btn-icon" onclick="Universal.inc('+c.id+')">+</button>'+
+        '<button class="btn btn-ghost btn-icon" onclick="Universal.dec('+c.id+')">−</button>'+
+      '</div>'+
+      '<div class="toolbar" style="margin:10px 0 0; justify-content:center;">'+
+        '<span style="font-size:.7rem; color:var(--ink-faint);">passo</span>'+
+        '<input type="number" value="'+c.step+'" style="width:56px;" onchange="Universal.setStep('+c.id+', this.value)">'+
+        '<button class="btn btn-ghost btn-sm" onclick="Universal.resetOne('+c.id+')">Reset</button>'+
+      '</div>'+
+    '</div>';
+  },
+  renderOne(id){
+    const c=this.state.counters.find(c=>c.id===id);
+    if(!c) return;
+    const valEl = el('uni-value-'+id);
+    if(valEl) valEl.textContent = c.value;
+  },
+  render(){
+    el('universal-grid').innerHTML = this.state.counters.map(c=>this.cardHtml(c)).join('');
+  }
+};
+
+/* ============================================================
+   INIT
+   ============================================================ */
+Tennis.init();
+Bowling.render();
+Tennis.render();
+Calcio.render();
+Basket.render();
+Altri.render();
+Chess.render();
+Universal.render();
+</script>
+</body>
+</html>
